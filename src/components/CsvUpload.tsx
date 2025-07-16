@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { FileSpreadsheet, Upload, CheckCircle, ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { uploadCsvFile } from "@/utils/api";
 
 interface CsvUploadProps {
   onBack: () => void;
@@ -12,6 +13,7 @@ interface CsvUploadProps {
 const CsvUpload = ({ onBack }: CsvUploadProps) => {
   const [file, setFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
   const { toast } = useToast();
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -35,21 +37,44 @@ const CsvUpload = ({ onBack }: CsvUploadProps) => {
     if (!file) return;
     
     setIsUploading(true);
-    // Simulate upload process
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    setIsUploading(false);
-    
-    toast({
-      title: "Upload Successful!",
-      description: "Your CSV file has been uploaded successfully.",
-    });
+    try {
+      const response = await uploadCsvFile(file);
+      toast({
+        title: "Upload Successful!",
+        description: response.message || "Your CSV file has been uploaded successfully.",
+      });
+    } catch (error) {
+      toast({
+        title: "Upload Failed",
+        description: "Failed to upload CSV file. Please try again.",
+        variant: "destructive",
+      });
+      console.error('Upload error:', error);
+    } finally {
+      setIsUploading(false);
+    }
   };
 
-  const handleProcess = () => {
-    toast({
-      title: "Processing Started",
-      description: "Your CSV file is being processed...",
-    });
+  const handleProcess = async () => {
+    if (!file) return;
+    
+    setIsProcessing(true);
+    try {
+      await uploadCsvFile(file);
+      toast({
+        title: "Processing Complete!",
+        description: "Your CSV file has been processed successfully.",
+      });
+    } catch (error) {
+      toast({
+        title: "Processing Failed",
+        description: "Failed to process CSV file. Please try again.",
+        variant: "destructive",
+      });
+      console.error('Processing error:', error);
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   return (
@@ -131,11 +156,11 @@ const CsvUpload = ({ onBack }: CsvUploadProps) => {
             
             <Button
               onClick={handleProcess}
-              disabled={!file}
+              disabled={!file || isProcessing}
               variant="outline"
               className="flex-1 h-12 border-2 font-semibold hover:bg-gray-50"
             >
-              Process File
+              {isProcessing ? "Processing..." : "Process File"}
             </Button>
           </div>
         </CardContent>

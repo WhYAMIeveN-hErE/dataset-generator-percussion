@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Link, ArrowLeft, Clock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { processUrl } from "@/utils/api";
 
 interface UrlProcessorProps {
   onBack: () => void;
@@ -29,14 +30,22 @@ const UrlProcessor = ({ onBack }: UrlProcessorProps) => {
     }
 
     setIsProcessing(true);
-    // Simulate processing
-    await new Promise(resolve => setTimeout(resolve, 3000));
-    setIsProcessing(false);
-    
-    toast({
-      title: "Processing Complete!",
-      description: "Your URL has been processed successfully.",
-    });
+    try {
+      const response = await processUrl(url, startTime, endTime);
+      toast({
+        title: "Processing Complete!",
+        description: response.message || "Your URL has been processed successfully.",
+      });
+    } catch (error) {
+      toast({
+        title: "Processing Failed",
+        description: "Failed to process URL. Please try again.",
+        variant: "destructive",
+      });
+      console.error('Processing error:', error);
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   return (
